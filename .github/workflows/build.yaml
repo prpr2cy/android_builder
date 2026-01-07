@@ -69,19 +69,26 @@ jobs:
             sdkmanager "platform-tools" "platforms;android-33" "build-tools;34.0.0" "ndk;25.1.8937393" "cmake;3.22.1"
 
       # ----------------------------------------------------------
-      # 7. 真正构建
+      # 7. 给 gradlew 补可执行权限（修复 126 错误）
+      # ----------------------------------------------------------
+      - name: Make gradlew executable
+        working-directory: _project
+        run: chmod +x ./gradlew
+
+      # ----------------------------------------------------------
+      # 8. 真正构建 
       # ----------------------------------------------------------
       - name: Build debug APK
-        working-directory: _project  # 新增：切换到项目目录
+        working-directory: _project 
         env:
-          GRADLE_OPTS: -Xmx4g -XX:MaxMetaspaceSize=512m   # 最多吃 4 GB，留 3 GB 给系统/Kotlin
-          KOTLIN_COMPILER_HEAP_SIZE: 2048m               # 每个 Kotlin worker 2 GB
-          KOTLIN_INCREMENTAL: false                      # 防止增量缓存炸内存
-          org.gradle.workers.max: 2                      # 只允许 2 并行 worker
+          GRADLE_OPTS: -Xmx4g -XX:MaxMetaspaceSize=512m
+          KOTLIN_COMPILER_HEAP_SIZE: 2048m
+          KOTLIN_INCREMENTAL: false
+          org.gradle.workers.max: 2
         run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
 
       # ----------------------------------------------------------
-      # 8. 把生成的 apk 找出来并上传
+      # 9. 把生成的 apk 找出来并上传
       # ----------------------------------------------------------
       - name: Upload APK
         uses: actions/upload-artifact@v4
