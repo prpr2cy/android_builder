@@ -14,7 +14,6 @@ jobs:
       - name: Checkout the code
         uses: actions/checkout@v4
         with:
-          # 如果你的 gradle 里用 git rev-list 取提交数，需要完整历史
           fetch-depth: 0
 
       # ----------------------------------------------------------
@@ -60,13 +59,12 @@ jobs:
       # 6. 安装 Android SDK 命令行工具 + NDK 25.1.8937393
       # ----------------------------------------------------------
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3   # 会自动装好 cmdline-tools & platform-tools
+        uses: android-actions/setup-android@v3
 
       - name: Install required SDK components
         run: |
-          yes |
-            sdkmanager --licenses > /dev/null || true
-            sdkmanager "platform-tools" "platforms;android-33" "build-tools;34.0.0" "ndk;25.1.8937393" "cmake;3.22.1"
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platform-tools" "platforms;android-33" "build-tools;34.0.0" "ndk;25.1.8937393" "cmake;3.22.1"
 
       # ----------------------------------------------------------
       # 7. 给 gradlew 补可执行权限（修复 126 错误）
@@ -76,23 +74,37 @@ jobs:
         run: chmod +x ./gradlew
 
       # ----------------------------------------------------------
-      # 8. 真正构建 
+      # 8. 真正构建（显示完整错误详情）
       # ----------------------------------------------------------
       - name: Build debug APK
         working-directory: _project
         env:
-          GRADLE_OPTS: -Xmx4g -XX:MaxMetaspaceSize=1024m  # 减少堆内存，增加元空间
-          KOTLIN_COMPILER_HEAP_SIZE: 1024m               # 进一步减小Kotlin编译器内存
-          KOTLIN_INCREMENTAL: true                       # 启用增量编译，减少内存占用
-          org.gradle.workers.max: 1                      # 保持1个并发 worker
-          org.gradle.parallel: false                       # 关闭并行构建
-          org.gradle.caching: true                       # 启用构建缓存
+          GRADLE_OPTS: -Xmx3g -XX:MaxMetaspaceSize=1024m
+          KOTLIN_COMPILER_HEAP_SIZE: 1536m
+          KOTLIN_INCREMENTAL: true
+          org.gradle.workers.max: 1
+          org.gradle.parallel: false
+          org.gradle.caching: true
         run: |
-          # 关闭所有实验性特性
-          ./gradlew :app:assembleDebug --no-daemon --info --stacktrace \
+          # 执行构建并保存完整日志到文件
+          ./gradlew :app:assembleDebug --no-daemon \
+            --info --stacktrace \
             -Pkotlin.experimental.tryK2=false \
             -Pandroid.experimental.enableNewResourceShrinker=false \
-            -Pandroid.enableR8.fullMode=false
+            -Pandroid.enableR8.fullMode=false > build.log 2>&1
+
+          # 检查构建是否成功
+          if grep -q "BUILD SUCCESSFUL" build.log; then
+            echo "✅ Build completed successfully"
+          else
+            echo "❌ Build failed, showing full error details:"
+            echo "--------------------------------------------------"
+            # 显示所有错误和异常信息，包括上下文
+            grep -A 30 -B 5 -E "(ERROR|FAILED|Exception|Caused by:|Compilation error)" build.log
+            echo "--------------------------------------------------"
+            echo "Full build log saved to build.log"
+            exit 1
+          fi
 
       # ----------------------------------------------------------
       # 9. 把生成的 apk 找出来并上传
@@ -101,6 +113,15 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: legado-debug-apk
-          # 这里只传最终 apk，避免把 intermediates 也打包
           path: _project/app/build/outputs/apk/*/*/*.apk
+          retention-days: 3
+
+      # ----------------------------------------------------------
+      # 10. 上传构建日志（可选，用于调试）
+      # ----------------------------------------------------------
+      - name: Upload build log
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: _project/build.log
           retention-days: 3
