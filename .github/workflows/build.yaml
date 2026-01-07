@@ -1,9 +1,90 @@
-- name: Upload APK artifacts
-  uses: actions/upload-artifact@v4
-  with:
-    name: android-apk-app-${{ inputs.build_type }}
-    path: |
-      app/build/outputs/apk/app/${{ inputs.build_type }}/*.apk
-      app/build/outputs/bundle/app${{ inputs.build_type }}/*.aab
-    retention-days: 7
-    if-no-files-found: error
+name: android_build 
+ 
+on:
+  workflow_dispatch:
+ 
+jobs:
+  build:
+    runs-on: ubuntu-latest 
+ 
+    steps:
+      # ----------------------------------------------------------
+      # 1. 源码 
+      # ----------------------------------------------------------
+      - name: Checkout the code 
+        uses: actions/checkout@v4 
+        with:
+          # 如果你的 gradle 里用 git rev-list 取提交数，需要完整历史 
+          fetch-depth: 0 
+ 
+      # ----------------------------------------------------------
+      # 2. JDK 17（AGP 8+ 必须）
+      # ----------------------------------------------------------
+      - name: Set up JDK 17 
+        uses: actions/setup-java@v4 
+        with:
+          distribution: temurin 
+          java-version: 17 
+ 
+      # ----------------------------------------------------------
+      # 3. 把 project-to-build 文件里的仓库地址读出来 
+      # ----------------------------------------------------------
+      - name: Get project git url 
+        id: get-project 
+        run: |
+          url=$(cat project-to-build)
+          echo "PROJECT=$url" >> $GITHUB_OUTPUT 
+ 
+      # ----------------------------------------------------------
+      # 4. 克隆仓库 
+      # ----------------------------------------------------------
+      - name: Clone project 
+        run: |
+          git clone --depth=1 "${{ steps.get-project.outputs.PROJECT }}" _project 
+ 
+      # ----------------------------------------------------------
+      # 5. 缓存 Gradle / KSP / NDK 依赖，极大加速再次构建 
+      # ----------------------------------------------------------
+      - name: Cache Gradle & NDK 
+        uses: actions/cache@v4 
+        with:
+          path: |
+            ~/.gradle/caches 
+            ~/.gradle/wrapper 
+            ~/android-sdk/ndk 
+          key: gradle-${{ runner.os }}-${{ hashFiles('_project/**/*.gradle*', '_project/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+ 
+      # ----------------------------------------------------------
+      # 6. 安装 Android SDK 命令行工具 + NDK 25.1.8937393 
+      # ----------------------------------------------------------
+      - name: Setup Android SDK 
+        uses: android-actions/setup-android@v3   # 会自动装好 cmdline-tools & platform-tools 
+ 
+      - name: Install required SDK components 
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true 
+          sdkmanager "platform-tools" "platforms;android-33" "build-tools;34.0.0" "ndk;25.1.8937393" "cmake;3.22.1"
+ 
+      # ----------------------------------------------------------
+      # 7. 真正构建 
+      # ----------------------------------------------------------
+      - name: Build debug APK 
+        working-directory: _project 
+        run: |
+          chmod +x gradlew 
+          # 如果你的 local.properties 里没有 sdk.dir，可以自动生成 
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties 
+          ./gradlew assembleAppDebug --stacktrace 
+ 
+      # ----------------------------------------------------------
+      # 8. 把生成的 apk 找出来并上传 
+      # ----------------------------------------------------------
+      - name: Upload APK 
+        uses: actions/upload-artifact@v4 
+        with:
+          name: legado-debug-apk 
+          # 这里只传最终 apk，避免把 intermediates 也打包 
+          path: _project/app/build/outputs/apk/*/*/*.apk 
+          retention-days: 3
