@@ -11,7 +11,7 @@ jobs:
       # ----------------------------------------------------------
       # 1. 源码
       # ----------------------------------------------------------
-- name: Checkout the code
+      - name: Checkout the code
         uses: actions/checkout@v4
         with:
           # 如果你的 gradle 里用 git rev-list 取提交数，需要完整历史
@@ -20,7 +20,7 @@ jobs:
       # ----------------------------------------------------------
       # 2. JDK 17（AGP 8+ 必须）
       # ----------------------------------------------------------
-- name: Set up JDK 17
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -29,7 +29,7 @@ jobs:
       # ----------------------------------------------------------
       # 3. 把 project-to-build 文件里的仓库地址读出来
       # ----------------------------------------------------------
-- name: Get project git url
+      - name: Get project git url
         id: get-project
         run: |
           url=$(cat project-to-build)
@@ -38,14 +38,14 @@ jobs:
       # ----------------------------------------------------------
       # 4. 克隆仓库
       # ----------------------------------------------------------
-- name: Clone project
+      - name: Clone project
         run: |
           git clone --depth=1 "${{ steps.get-project.outputs.PROJECT }}" _project
 
       # ----------------------------------------------------------
       # 5. 缓存 Gradle / KSP / NDK 依赖，极大加速再次构建
       # ----------------------------------------------------------
-- name: Cache Gradle & NDK
+      - name: Cache Gradle & NDK
         uses: actions/cache@v4
         with:
           path: |
@@ -59,10 +59,10 @@ jobs:
       # ----------------------------------------------------------
       # 6. 安装 Android SDK 命令行工具 + NDK 25.1.8937393
       # ----------------------------------------------------------
-- name: Setup Android SDK
+      - name: Setup Android SDK
         uses: android-actions/setup-android@v3   # 会自动装好 cmdline-tools & platform-tools
 
-- name: Install required SDK components
+      - name: Install required SDK components
         run: |
 
 yes | sdkmanager --licenses > /dev/null || true
@@ -71,7 +71,7 @@ yes | sdkmanager --licenses > /dev/null || true
       # ----------------------------------------------------------
       # 7. 真正构建
       # ----------------------------------------------------------
-- name: Build debug APK
+      - name: Build debug APK
         working-directory: _project  # 新增：切换到项目目录
         env:
           GRADLE_OPTS: -Xmx4g -XX:MaxMetaspaceSize=512m   # 最多吃 4 GB，留 3 GB 给系统/Kotlin
@@ -83,7 +83,7 @@ yes | sdkmanager --licenses > /dev/null || true
       # ----------------------------------------------------------
       # 8. 把生成的 apk 找出来并上传
       # ----------------------------------------------------------
-- name: Upload APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: legado-debug-apk
