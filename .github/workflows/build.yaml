@@ -69,7 +69,7 @@ jobs:
       # 6. 安装 Android SDK 命令行工具 + NDK 25.1.8937393
       # ----------------------------------------------------------
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v4
+        uses: android-actions/setup-android@v3
         with:
           packages: platforms;android-34,build-tools;34.0.0,ndk;25.1.8937393,cmake;3.22.1,platform-tools
           cache: true  # 启用SDK缓存
@@ -80,14 +80,46 @@ jobs:
           yes | sdkmanager --licenses > /dev/null || true
 
       # ----------------------------------------------------------
-      # 7. 给 gradlew 补可执行权限
+      # 6. 安装 Android SDK 命令行工具
+      # ----------------------------------------------------------
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      # ----------------------------------------------------------
+      # 7. 安装指定组件（带缓存）
+      # ----------------------------------------------------------
+      - name: Cache Android SDK components
+        uses: actions/cache@v4
+        id: sdk-cache
+        with:
+          path: |
+            ~/android-sdk/platforms
+            ~/android-sdk/build-tools
+            ~/android-sdk/ndk
+            ~/android-sdk/cmake
+          key: android-sdk-${{ runner.os }}-34-34.0.0-25.1.8937393-3.22.1
+          restore-keys: android-sdk-${{ runner.os }}-
+
+      - name: Install SDK/NDK/CMake
+        if: steps.sdk-cache.outputs.cache-hit != 'true'
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager --install \
+            "platforms;android-34" \
+            "build-tools;34.0.0" \
+            "ndk;25.1.8937393" \
+            "cmake;3.22.1" \
+            "platform-tools"
+
+      # ----------------------------------------------------------
+      # 8. 给 gradlew 补可执行权限
       # ----------------------------------------------------------
       - name: Make gradlew executable
         working-directory: _project
         run: chmod +x ./gradlew
 
       # ----------------------------------------------------------
-      # 8. 真正构建（显示完整错误详情）
+      # 9. 真正构建（显示完整错误详情）
       # ----------------------------------------------------------
       - name: Build APK
         working-directory: _project
@@ -107,7 +139,7 @@ jobs:
             -Pandroid.enableR8.fullMode=false
 
       # ----------------------------------------------------------
-      # 9. 把生成的 apk 找出来并上传
+      # 10. 把生成的 apk 找出来并上传
       # ----------------------------------------------------------
       - name: Upload APK
         uses: actions/upload-artifact@v4
