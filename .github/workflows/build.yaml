@@ -64,7 +64,7 @@ jobs:
       - name: Install required SDK components
         run: |
           yes | sdkmanager --licenses > /dev/null || true
-          sdkmanager "platform-tools" "platforms;android-33" "build-tools;34.0.0" "ndk;25.1.8937393" "cmake;3.22.1"
+          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0" "ndk;25.1.8937393" "cmake;3.22.1"
 
       # ----------------------------------------------------------
       # 7. 给 gradlew 补可执行权限（修复 126 错误）
@@ -79,17 +79,18 @@ jobs:
       - name: Build debug APK
         working-directory: _project
         env:
-          GRADLE_OPTS: -Xmx4g -XX:MaxMetaspaceSize=1024m
+          GRADLE_OPTS: -Xmx5g -XX:MaxMetaspaceSize=512m
           KOTLIN_COMPILER_HEAP_SIZE: 1536m
           KOTLIN_INCREMENTAL: false
+          ORG_GRADLE_WORKERS_MAX: 1
         run: |
           ./gradlew clean
-          ./gradlew :app:assembleDebug \
+          ./gradlew app:compileAppDebugKotlin --info
+          ./gradlew app:assembleDebug \
             --no-daemon \
             --stacktrace \
-            -Dorg.gradle.workers.max=1 \
-            -Dorg.gradle.parallel=false \
-            -Dorg.gradle.caching=true \
+            --no-parallel \
+            --no-build-cache \
             -Pkotlin.experimental.tryK2=false \
             -Pandroid.experimental.enableNewResourceShrinker=false \
             -Pandroid.enableR8.fullMode=false
