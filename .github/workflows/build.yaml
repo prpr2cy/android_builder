@@ -81,7 +81,7 @@ jobs:
         env:
           GRADLE_OPTS: -Xmx4g -XX:MaxMetaspaceSize=1024m
           KOTLIN_COMPILER_HEAP_SIZE: 1536m
-          KOTLIN_INCREMENTAL: true
+          KOTLIN_INCREMENTAL: false
         run: |
           ./gradlew clean
           ./gradlew :app:assembleDebug \
