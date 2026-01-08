@@ -83,7 +83,7 @@ jobs:
           sdkmanager "platform-tools"
 
       # ----------------------------------------------------------
-      # 7. 给 gradlew 补可执行权限（修复 126 错误）
+      # 7. 给 gradlew 补可执行权限
       # ----------------------------------------------------------
       - name: Make gradlew executable
         working-directory: _project
@@ -108,7 +108,6 @@ jobs:
             -Pkotlin.experimental.tryK2=false \
             -Pandroid.experimental.enableNewResourceShrinker=false \
             -Pandroid.enableR8.fullMode=false
-        continue-on-error: true
 
       # ----------------------------------------------------------
       # 9. 把生成的 apk 找出来并上传
