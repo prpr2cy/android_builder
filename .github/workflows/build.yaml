@@ -79,7 +79,7 @@ jobs:
       - name: Build debug APK
         working-directory: _project
         env:
-          GRADLE_OPTS: -Xmx3g -XX:MaxMetaspaceSize=1024m
+          GRADLE_OPTS: -Xmx4g -XX:MaxMetaspaceSize=1024m
           KOTLIN_COMPILER_HEAP_SIZE: 1536m
           KOTLIN_INCREMENTAL: true
           org.gradle.workers.max: 1
@@ -88,23 +88,10 @@ jobs:
         run: |
           # 执行构建并保存完整日志到文件
           ./gradlew :app:assembleDebug --no-daemon \
-            --info --stacktrace \
+            --quiet --stacktrace \
             -Pkotlin.experimental.tryK2=false \
             -Pandroid.experimental.enableNewResourceShrinker=false \
-            -Pandroid.enableR8.fullMode=false > build.log 2>&1
-
-          # 检查构建是否成功
-          if grep -q "BUILD SUCCESSFUL" build.log; then
-            echo "✅ Build completed successfully"
-          else
-            echo "❌ Build failed, showing full error details:"
-            echo "--------------------------------------------------"
-            # 显示所有错误和异常信息，包括上下文
-            grep -A 30 -B 5 -E "(ERROR|FAILED|Exception|Caused by:|Compilation error)" build.log
-            echo "--------------------------------------------------"
-            echo "Full build log saved to build.log"
-            exit 1
-          fi
+            -Pandroid.enableR8.fullMode=false
 
       # ----------------------------------------------------------
       # 9. 把生成的 apk 找出来并上传
