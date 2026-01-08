@@ -60,7 +60,7 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             _project/.gradle
-          key: gradle-${{ runner.os }}-${{ hashFiles('_project/**/*.gradle*', '_project/gradle-wrapper.properties', '_project/settings.gradle*') }}
+          key: gradle-${{ runner.os }}-${{ hashFiles('_project/**/*.gradle*', '_project/gradle-wrapper.properties'') }}
           restore-keys: gradle-${{ runner.os }}-
 
       # ----------------------------------------------------------
