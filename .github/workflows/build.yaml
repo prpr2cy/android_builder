@@ -59,9 +59,12 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
+            ~/.android/ndk
+            ~/.android/cache
             _project/.gradle
           key: gradle-${{ runner.os }}-${{ hashFiles('_project/**/*.gradle*', '_project/gradle-wrapper.properties') }}
-          restore-keys: gradle-${{ runner.os }}-
+          restore-keys: |
+            gradle-${{ runner.os }}-
 
       # ----------------------------------------------------------
       # 6. 安装 Android SDK 命令行工具 + NDK 25.1.8937393
@@ -77,7 +80,9 @@ jobs:
 
       - name: Install required SDK components
         run: |
-          yes | sdkmanager --licenses > /dev/null || true
+
+yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platform-tools"
 
       # ----------------------------------------------------------
       # 7. 给 gradlew 补可执行权限（修复 126 错误）
