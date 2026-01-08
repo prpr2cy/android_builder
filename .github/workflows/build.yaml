@@ -82,13 +82,14 @@ jobs:
           GRADLE_OPTS: -Xmx4g -XX:MaxMetaspaceSize=1024m
           KOTLIN_COMPILER_HEAP_SIZE: 1536m
           KOTLIN_INCREMENTAL: true
-          org.gradle.workers.max: 1
-          org.gradle.parallel: false
-          org.gradle.caching: true
         run: |
-          # 执行构建并保存完整日志到文件
-          ./gradlew :app:assembleDebug --no-daemon \
-            --quiet --stacktrace \
+          ./gradlew clean
+          ./gradlew :app:assembleDebug \
+            --no-daemon \
+            --stacktrace \
+            -Dorg.gradle.workers.max=1 \
+            -Dorg.gradle.parallel=false \
+            -Dorg.gradle.caching=true \
             -Pkotlin.experimental.tryK2=false \
             -Pandroid.experimental.enableNewResourceShrinker=false \
             -Pandroid.enableR8.fullMode=false
@@ -100,5 +101,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: legado-debug-apk
-          path: _project/app/build/outputs/apk/*/*/*.apk
+          path: _project/app/build/outputs/apk/**/*.apk
           retention-days: 3
