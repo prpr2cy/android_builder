@@ -102,13 +102,3 @@ jobs:
           name: legado-debug-apk
           path: _project/app/build/outputs/apk/*/*/*.apk
           retention-days: 3
-
-      # ----------------------------------------------------------
-      # 10. 上传构建日志（可选，用于调试）
-      # ----------------------------------------------------------
-      - name: Upload build log
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-log
-          path: _project/build.log
-          retention-days: 3
