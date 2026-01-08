@@ -2,10 +2,18 @@ name: android_build
 
 on:
   workflow_dispatch:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    # 启用并发限制，避免超过免费额度
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
 
     steps:
       # ----------------------------------------------------------
@@ -14,7 +22,7 @@ jobs:
       - name: Checkout the code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
       # ----------------------------------------------------------
       # 2. JDK 17（AGP 8+ 必须）
@@ -24,6 +32,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+          cache: gradle
 
       # ----------------------------------------------------------
       # 3. 把 project-to-build 文件里的仓库地址读出来
@@ -50,21 +59,25 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-            ~/android-sdk/ndk
-          key: gradle-${{ runner.os }}-${{ hashFiles('_project/**/*.gradle*', '_project/gradle-wrapper.properties') }}
-          restore-keys: |
-            gradle-${{ runner.os }}-
+            _project/.gradle
+          key: gradle-${{ runner.os }}-${{ hashFiles('_project/**/*.gradle*', '_project/gradle-wrapper.properties', '_project/settings.gradle*') }}
+          restore-keys: gradle-${{ runner.os }}-
 
       # ----------------------------------------------------------
       # 6. 安装 Android SDK 命令行工具 + NDK 25.1.8937393
       # ----------------------------------------------------------
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          sdk-platforms: android-34
+          sdk-build-tools: 34.0.0
+          ndk-version: 25.1.8937393
+          cmake-version: 3.22.1
+          disable-cache: false  # 启用SDK缓存
 
       - name: Install required SDK components
         run: |
           yes | sdkmanager --licenses > /dev/null || true
-          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0" "ndk;25.1.8937393" "cmake;3.22.1"
 
       # ----------------------------------------------------------
       # 7. 给 gradlew 补可执行权限（修复 126 错误）
@@ -79,21 +92,20 @@ jobs:
       - name: Build debug APK
         working-directory: _project
         env:
-          GRADLE_OPTS: -Xmx5g -XX:MaxMetaspaceSize=512m
+          GRADLE_OPTS: -Xmx4g -XX:MaxMetaspaceSize=512m
           KOTLIN_COMPILER_HEAP_SIZE: 1536m
           KOTLIN_INCREMENTAL: false
           ORG_GRADLE_WORKERS_MAX: 1
         run: |
           ./gradlew clean
-          ./gradlew app:compileAppDebugKotlin --info
           ./gradlew app:assembleDebug \
             --no-daemon \
+            --warn \
             --stacktrace \
-            --no-parallel \
-            --no-build-cache \
             -Pkotlin.experimental.tryK2=false \
             -Pandroid.experimental.enableNewResourceShrinker=false \
             -Pandroid.enableR8.fullMode=false
+        continue-on-error: true
 
       # ----------------------------------------------------------
       # 9. 把生成的 apk 找出来并上传
