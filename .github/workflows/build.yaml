@@ -66,20 +66,6 @@ jobs:
             gradle-${{ runner.os }}-
 
       # ----------------------------------------------------------
-      # 6. 安装 Android SDK 命令行工具 + NDK 25.1.8937393
-      # ----------------------------------------------------------
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          packages: platforms;android-34,build-tools;34.0.0,ndk;25.1.8937393,cmake;3.22.1,platform-tools
-          cache: true  # 启用SDK缓存
-          cmdline-tools-version: latest
-
-      - name: Install required SDK components
-        run: |
-          yes | sdkmanager --licenses > /dev/null || true
-
-      # ----------------------------------------------------------
       # 6. 安装 Android SDK 命令行工具
       # ----------------------------------------------------------
       - name: Setup Android SDK
