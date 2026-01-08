@@ -80,8 +80,7 @@ jobs:
 
       - name: Install required SDK components
         run: |
-
-yes | sdkmanager --licenses > /dev/null || true
+          yes | sdkmanager --licenses > /dev/null || true
           sdkmanager "platform-tools"
 
       # ----------------------------------------------------------
