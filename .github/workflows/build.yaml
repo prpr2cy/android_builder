@@ -86,7 +86,7 @@ jobs:
             /usr/local/lib/android/sdk/ndk
             /usr/local/lib/android/sdk/cmake
             /usr/local/lib/android/sdk/platform-tools
-          key: android-sdk-${{ runner.os }}-${{ hashFiles('_project/**/*.gradle*', '_project/gradle-wrapper.properties'') }}
+          key: android-sdk-${{ runner.os }}-${{ hashFiles('_project/**/*.gradle*', '_project/gradle-wrapper.properties') }}
           restore-keys: |
             android-sdk-${{ runner.os }}-
 
