@@ -50,20 +50,17 @@ jobs:
           java-version: 17
 
       # ----------------------------------------------------------
-      # 5. 缓存 Gradle / KSP / NDK
+      # 5. 缓存 Gradle
       # ----------------------------------------------------------
-      - name: Cache Gradle & NDK
+      - name: Cache Gradle
         uses: actions/cache@v4
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-            ~/.android/ndk
-            ~/.android/cache
             _project/.gradle
           key: gradle-${{ runner.os }}-${{ hashFiles('_project/**/*.gradle*', '_project/gradle-wrapper.properties') }}
-          restore-keys: |
-            gradle-${{ runner.os }}-
+          restore-keys: gradle-${{ runner.os }}-
 
       # ----------------------------------------------------------
       # 6. 安装 Android SDK
@@ -89,7 +86,9 @@ jobs:
             /usr/local/lib/android/sdk/ndk
             /usr/local/lib/android/sdk/cmake
             /usr/local/lib/android/sdk/platform-tools
-          key: android-sdk-${{ runner.os }}-34-34.0.0-25.1.8937393-3.22.1
+          key: android-sdk-${{ runner.os }}-${{ hashFiles('_project/**/*.gradle*', '_project/gradle-wrapper.properties'') }}
+          restore-keys: |
+            android-sdk-${{ runner.os }}-
 
       - name: Install SDK/NDK/CMake
         if: steps.sdk-cache.outputs.cache-hit != 'true'
