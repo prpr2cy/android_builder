@@ -25,7 +25,7 @@ jobs:
           fetch-depth: 1
 
       # ----------------------------------------------------------
-      # 2. 把 project-to-build 文件里的仓库地址读出来
+      # 2. 读取 project-to-build 文件里的仓库地址
       # ----------------------------------------------------------
       - name: Get project git url
         id: get-project
@@ -50,7 +50,7 @@ jobs:
           java-version: 17
 
       # ----------------------------------------------------------
-      # 5. 缓存 Gradle / KSP / NDK 依赖，极大加速再次构建
+      # 5. 缓存 Gradle / KSP / NDK
       # ----------------------------------------------------------
       - name: Cache Gradle & NDK
         uses: actions/cache@v4
@@ -66,13 +66,13 @@ jobs:
             gradle-${{ runner.os }}-
 
       # ----------------------------------------------------------
-      # 6. 安装 Android SDK 命令行工具
+      # 6. 安装 Android SDK
       # ----------------------------------------------------------
-      - name: Setup Android SDK environment
+      - name: Setup Android SDK
         run: |
           # GitHub runner 已预装 SDK，只需设置环境变量
           echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> $GITHUB_ENV
-          echo "ANDROID_SDK_ROOT=/usr/local/lib/android/sdk" >> $GITHUB_PATH
+          echo "ANDROID_SDK_ROOT=/usr/local/lib/android/sdk" >> $GITHUB_ENV
           # 把 sdkmanager 加入 PATH（方便调用）
           echo "/usr/local/lib/android/sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
 
@@ -110,7 +110,7 @@ jobs:
         run: chmod +x ./gradlew
 
       # ----------------------------------------------------------
-      # 9.1 真正构建（显示完整错误详情）
+      # 9.1 构建 Release APK（显示完整错误详情）
       # ----------------------------------------------------------
       - name: Build Release APK
         working-directory: _project
@@ -131,7 +131,7 @@ jobs:
             -Pandroid.enableR8.fullMode=true
 
       # ----------------------------------------------------------
-      # 9.2 真正构建（显示完整错误详情）
+      # 9.2 构建 Debug APK（显示完整错误详情）
       # ----------------------------------------------------------
       #- name: Build Debug APK
       #  working-directory: _project
@@ -152,7 +152,7 @@ jobs:
       #      -Pandroid.enableR8.fullMode=false
 
       # ----------------------------------------------------------
-      # 10. 把生成的 apk 找出来并上传
+      # 10. 上传 APK
       # ----------------------------------------------------------
       - name: Upload APK
         uses: actions/upload-artifact@v4
